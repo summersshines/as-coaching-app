@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AS Coaching</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f4f0;color:#222;font-size:13px;min-height:100vh;}
+
+/* ── HEADER ── */
+.gold-bar{height:4px;background:linear-gradient(90deg,#EF9F27,#f5c76e,#EF9F27);}
+.hdr{background:#1a3a2a;padding:14px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3);}
+.hdr-brand{color:#EF9F27;font-family:Georgia,serif;font-size:1.3rem;font-weight:bold;letter-spacing:1px;flex:1;}
+.hdr-brand span{color:#a8c4b0;font-size:.75rem;font-weight:normal;display:block;letter-spacing:.5px;margin-top:1px;}
+.sync-wrap{display:flex;align-items:center;gap:5px;font-size:10px;color:#a8c4b0;}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#4caf50;flex-shrink:0;}
+.sync-dot.off{background:#ff5252;}
+
+/* ── TABS ── */
+.tabs{background:#0F6E56;display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;position:sticky;top:56px;z-index:99;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{padding:12px 16px;font-size:12px;font-weight:700;color:rgba(255,255,255,.55);cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent;transition:all .2s;-webkit-tap-highlight-color:transparent;}
+.tab.active{color:#EF9F27;border-bottom-color:#EF9F27;}
+.tab:hover:not(.active){color:#fff;}
+
+/* ── PANELS ── */
+.content{padding:16px;max-width:680px;margin:0 auto;}
+.panel{display:none;}.panel.active{display:block;}
+
+/* ── LOADING ── */
+#loading{position:fixed;inset:0;background:rgba(26,58,42,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;color:white;gap:14px;}
+.spinner{width:38px;height:38px;border:4px solid rgba(255,255,255,.2);border-top-color:#EF9F27;border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+#loading p{font-size:13px;opacity:.8;}
+
+/* ── STUDENTS TAB ── */
+.search-bar{width:100%;border:2px solid #0F6E56;border-radius:10px;padding:11px 14px;font-size:15px;font-family:inherit;background:#fff;margin-bottom:12px;-webkit-appearance:none;transition:border .2s;}
+.search-bar:focus{outline:none;border-color:#1a3a2a;}
+.student-count{font-size:11px;color:#888;margin-bottom:10px;}
+.student-list{display:flex;flex-direction:column;gap:8px;}
+.student-card{background:#fff;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 4px rgba(0,0,0,.07);cursor:pointer;transition:box-shadow .2s;border-left:4px solid #0F6E56;-webkit-tap-highlight-color:transparent;}
+.student-card:hover{box-shadow:0 3px 12px rgba(0,0,0,.12);}
+.student-avatar{width:38px;height:38px;border-radius:50%;background:#d4ede1;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#0F6E56;flex-shrink:0;}
+.student-info{flex:1;min-width:0;}
+.student-name{font-size:14px;font-weight:800;color:#1a3a2a;}
+.student-club{font-size:11px;color:#888;margin-top:2px;}
+.student-arrow{font-size:14px;color:#ccc;}
+.empty-state{text-align:center;padding:48px 20px;color:#999;}
+.empty-state .empty-icon{font-size:40px;margin-bottom:12px;}
+.empty-state p{font-size:13px;line-height:1.6;}
+
+/* ── ADD BUTTON ── */
+.add-btn{width:100%;padding:14px;background:#0F6E56;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:8px;-webkit-tap-highlight-color:transparent;transition:background .2s;}
+.add-btn:hover{background:#1a3a2a;}
+
+/* ── BOTTOM SHEET ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;display:none;align-items:flex-end;justify-content:center;}
+.overlay.open{display:flex;}
+.sheet{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:540px;padding:20px 20px 36px;box-shadow:0 -8px 32px rgba(0,0,0,.18);max-height:90vh;overflow-y:auto;}
+.sheet-handle{width:40px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 18px;}
+.sheet-title{font-size:16px;font-weight:900;color:#1a3a2a;margin-bottom:16px;}
+.fr{display:flex;flex-direction:column;gap:4px;margin-bottom:14px;}
+.fr label{font-size:11px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.5px;}
+.fr input{border:1.5px solid #ddd;border-radius:10px;padding:12px 14px;font-size:16px;font-family:inherit;background:#fafafa;-webkit-appearance:none;transition:border .2s;}
+.fr input:focus{outline:none;border-color:#0F6E56;background:#fff;}
+.sheet-actions{display:flex;gap:8px;margin-top:6px;}
+.btn-save{flex:1;padding:14px;background:#0F6E56;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .2s;}
+.btn-save:hover{background:#1a3a2a;}
+.btn-cancel{padding:14px 20px;background:#f0f0ec;color:#666;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;}
+
+/* ── PROFILE VIEW ── */
+.profile-header{background:linear-gradient(135deg,#1a3a2a,#0F6E56);border-radius:12px;padding:20px 16px;margin-bottom:14px;display:flex;align-items:center;gap:14px;}
+.profile-avatar-lg{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;color:#EF9F27;flex-shrink:0;}
+.profile-header-info{flex:1;}
+.profile-header-name{font-size:18px;font-weight:900;color:#fff;}
+.profile-header-club{font-size:12px;color:#a8c4b0;margin-top:3px;}
+.back-btn{display:flex;align-items:center;gap:6px;background:none;border:none;color:#0F6E56;font-size:13px;font-weight:700;cursor:pointer;padding:0 0 12px 0;-webkit-tap-highlight-color:transparent;}
+.back-btn:hover{color:#1a3a2a;}
+.coming-soon-card{background:#fff;border-radius:12px;padding:32px 20px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.07);color:#999;}
+.coming-soon-card .cs-icon{font-size:32px;margin-bottom:10px;}
+.coming-soon-card p{font-size:13px;line-height:1.6;}
+
+/* ── STUB PANELS ── */
+.stub{background:#fff;border-radius:12px;padding:40px 20px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.07);}
+.stub .stub-icon{font-size:36px;margin-bottom:12px;}
+.stub h3{font-size:15px;font-weight:800;color:#1a3a2a;margin-bottom:6px;}
+.stub p{font-size:12px;color:#888;line-height:1.6;}
+
+/* ── DELETE ── */
+.student-del{font-size:18px;cursor:pointer;color:#ddd;padding:4px;transition:color .2s;flex-shrink:0;}
+.student-del:hover{color:#e55;}
+
+@media(min-width:540px){.overlay{align-items:center;}.sheet{border-radius:20px;margin:16px;}}
+</style>
+</head>
+<body>
+
+<div id="loading"><div class="spinner"></div><p>Connecting…</p></div>
+
+<div class="gold-bar"></div>
+<div class="hdr">
+  <div class="hdr-brand">AS Coaching<span>Student Management</span></div>
+  <div class="sync-wrap"><div class="sync-dot" id="sync-dot"></div><span id="sync-msg">Connecting…</span></div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('students',this)">👤 Students</div>
+  <div class="tab" onclick="showTab('profile-tab',this)">📋 Profile</div>
+  <div class="tab" onclick="showTab('lessons',this)">📝 Lesson Log</div>
+  <div class="tab" onclick="showTab('planner',this)">🗓 Planner</div>
+  <div class="tab" onclick="showTab('drills',this)">🏌️ Drills</div>
+  <div class="tab" onclick="showTab('benchmarks',this)">📊 Benchmarks</div>
+</div>
+
+<div class="content">
+
+  <!-- STUDENTS -->
+  <div id="students" class="panel active">
+    <div id="students-list-view">
+      <button class="add-btn" onclick="openAddSheet()">➕ Add Student</button>
+      <input type="text" class="search-bar" id="search" placeholder="🔍 Search students…" oninput="renderList()">
+      <div class="student-count" id="student-count"></div>
+      <div class="student-list" id="student-list"></div>
+    </div>
+    <div id="students-profile-view" style="display:none;">
+      <button class="back-btn" onclick="closeProfile()">← Back to Students</button>
+      <div class="profile-header">
+        <div class="profile-avatar-lg" id="pv-avatar"></div>
+        <div class="profile-header-info">
+          <div class="profile-header-name" id="pv-name"></div>
+          <div class="profile-header-club" id="pv-club"></div>
+        </div>
+      </div>
+      <div class="coming-soon-card">
+        <div class="cs-icon">📋</div>
+        <p><strong>Full profile coming soon.</strong><br>Goals, swing faults, focus areas, benchmarks and lesson log will all live here.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROFILE TAB (stub) -->
+  <div id="profile-tab" class="panel">
+    <div class="stub"><div class="stub-icon">📋</div><h3>Profile</h3><p>Select a student from the Students tab to view their full profile.<br><br>Goals, swing faults, focus areas and benchmarks will live here.</p></div>
+  </div>
+
+  <!-- LESSON LOG (stub) -->
+  <div id="lessons" class="panel">
+    <div class="stub"><div class="stub-icon">📝</div><h3>Lesson Log</h3><p>Dated session entries with quick-select notes and homework tracking will be built here.</p></div>
+  </div>
+
+  <!-- PLANNER (stub) -->
+  <div id="planner" class="panel">
+    <div class="stub"><div class="stub-icon">🗓</div><h3>Planner</h3><p>Forward session planning with a convert-to-log flow will be built here.</p></div>
+  </div>
+
+  <!-- DRILLS (stub) -->
+  <div id="drills" class="panel">
+    <div class="stub"><div class="stub-icon">🏌️</div><h3>Drill Library</h3><p>Fault-linked drills and the master drill library will be built here.</p></div>
+  </div>
+
+  <!-- BENCHMARKS (stub) -->
+  <div id="benchmarks" class="panel">
+    <div class="stub"><div class="stub-icon">📊</div><h3>Benchmarks</h3><p>All 7 benchmark tests with interactive scorecards will be built here.</p></div>
+  </div>
+
+</div><!-- end .content -->
+
+<!-- ADD STUDENT SHEET -->
+<div class="overlay" id="add-overlay" onclick="overlayClick(event)">
+  <div class="sheet" id="add-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Add Student</div>
+    <div class="fr"><label>Full Name</label><input type="text" id="s-name" placeholder="First & last name" autocomplete="off"></div>
+    <div class="fr"><label>Club / Program</label><input type="text" id="s-club" placeholder="e.g. Ryde Parramatta GC" autocomplete="off"></div>
+    <div class="sheet-actions">
+      <button class="btn-cancel" onclick="closeAddSheet()">Cancel</button>
+      <button class="btn-save" onclick="saveStudent()">Save Student</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SURL='https://dejmkfbzbqtvqgxtwipv.supabase.co';
+const SKEY='sb_publishable_zLIVnPYNxlyyAsYrkq9LJg_ztRZaJFp';
+const sb=supabase.createClient(SURL,SKEY);
+const DB_KEY='hub_students';
+
+var students=[];
+var currentStudentId=null;
+
+// ── TAB NAV ──
+function showTab(id,el){
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  document.getElementById(id).classList.add('active');
+  if(el)el.classList.add('active');
+}
+
+// ── DB ──
+async function dbGet(key){
+  try{
+    var res=await sb.from('jdp_data').select('value').eq('key',key).limit(1).maybeSingle();
+    if(res.error||!res.data)return null;
+    return JSON.parse(res.data.value);
+  }catch(e){return null;}
+}
+async function dbSet(key,val){
+  try{
+    await sb.from('jdp_data').upsert({key:key,value:JSON.stringify(val)},{onConflict:'key'});
+    setSynced();
+  }catch(e){setSyncError();}
+}
+function setSynced(){
+  document.getElementById('sync-dot').className='sync-dot';
+  document.getElementById('sync-msg').textContent='Synced';
+  setTimeout(function(){document.getElementById('sync-msg').textContent='Live';},2000);
+}
+function setSyncError(){
+  document.getElementById('sync-dot').className='sync-dot off';
+  document.getElementById('sync-msg').textContent='Sync error';
+}
+
+// ── SORT ──
+function sortByLastName(arr){
+  return arr.slice().sort(function(a,b){
+    var an=(a.name||'').trim().split(' ');var bn=(b.name||'').trim().split(' ');
+    var al=an.length>1?an[an.length-1]:an[0];
+    var bl=bn.length>1?bn[bn.length-1]:bn[0];
+    return al.toLowerCase()<bl.toLowerCase()?-1:al.toLowerCase()>bl.toLowerCase()?1:0;
+  });
+}
+
+// ── INITIALS ──
+function initials(name){
+  var parts=(name||'').trim().split(' ').filter(Boolean);
+  if(!parts.length)return'?';
+  if(parts.length===1)return parts[0][0].toUpperCase();
+  return(parts[0][0]+parts[parts.length-1][0]).toUpperCase();
+}
+
+// ── RENDER LIST ──
+function renderList(){
+  var search=(document.getElementById('search').value||'').toLowerCase().trim();
+  var filtered=sortByLastName(students).filter(function(s){
+    return !search||s.name.toLowerCase().includes(search)||(s.club||'').toLowerCase().includes(search);
+  });
+  var countEl=document.getElementById('student-count');
+  var listEl=document.getElementById('student-list');
+  countEl.textContent=filtered.length+' student'+(filtered.length!==1?'s':'');
+  if(!filtered.length){
+    listEl.innerHTML='<div class="empty-state"><div class="empty-icon">'+(students.length?'🔍':'🏌️')+'</div><p>'+(students.length?'No students match your search.':'No students added yet.<br>Tap <strong>Add Student</strong> to get started.')+'</p></div>';
+    return;
+  }
+  listEl.innerHTML='';
+  filtered.forEach(function(s){
+    var card=document.createElement('div');
+    card.className='student-card';
+    card.innerHTML=
+      '<div class="student-avatar">'+initials(s.name)+'</div>'+
+      '<div class="student-info">'+
+        '<div class="student-name">'+s.name+'</div>'+
+        (s.club?'<div class="student-club">'+s.club+'</div>':'<div class="student-club" style="color:#ccc;">No club set</div>')+
+      '</div>'+
+      '<span class="student-arrow">›</span>'+
+      '<span class="student-del" onclick="deleteStudent(\''+s.id+'\',event)" title="Remove">✕</span>';
+    card.querySelector('.student-info').addEventListener('click',function(){openProfile(s.id);});
+    card.querySelector('.student-avatar').addEventListener('click',function(){openProfile(s.id);});
+    card.querySelector('.student-arrow').addEventListener('click',function(){openProfile(s.id);});
+    listEl.appendChild(card);
+  });
+}
+
+// ── PROFILE VIEW ──
+function openProfile(id){
+  var s=students.find(function(x){return x.id===id;});
+  if(!s)return;
+  currentStudentId=id;
+  document.getElementById('pv-avatar').textContent=initials(s.name);
+  document.getElementById('pv-name').textContent=s.name;
+  document.getElementById('pv-club').textContent=s.club||'No club set';
+  document.getElementById('students-list-view').style.display='none';
+  document.getElementById('students-profile-view').style.display='block';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function closeProfile(){
+  currentStudentId=null;
+  document.getElementById('students-profile-view').style.display='none';
+  document.getElementById('students-list-view').style.display='block';
+}
+
+// ── ADD SHEET ──
+function openAddSheet(){
+  document.getElementById('s-name').value='';
+  document.getElementById('s-club').value='';
+  document.getElementById('add-overlay').classList.add('open');
+  setTimeout(function(){document.getElementById('s-name').focus();},200);
+}
+function closeAddSheet(){document.getElementById('add-overlay').classList.remove('open');}
+function overlayClick(e){if(e.target===document.getElementById('add-overlay'))closeAddSheet();}
+
+async function saveStudent(){
+  var name=document.getElementById('s-name').value.trim();
+  if(!name){alert('Please enter a name.');return;}
+  var club=document.getElementById('s-club').value.trim();
+  var student={id:Date.now(),name:name,club:club};
+  students.push(student);
+  await dbSet(DB_KEY,students);
+  closeAddSheet();
+  renderList();
+}
+
+// ── DELETE ──
+async function deleteStudent(id,e){
+  e.stopPropagation();
+  var s=students.find(function(x){return String(x.id)===String(id);});
+  if(!s)return;
+  if(!confirm('Remove '+s.name+'? This cannot be undone.'))return;
+  students=students.filter(function(x){return String(x.id)!==String(id);});
+  await dbSet(DB_KEY,students);
+  renderList();
+}
+
+// ── INIT ──
+async function init(){
+  try{
+    await sb.from('jdp_data').select('key').limit(1);
+    document.getElementById('sync-dot').className='sync-dot';
+    document.getElementById('sync-msg').textContent='Live';
+    students=await dbGet(DB_KEY)||[];
+    renderList();
+  }catch(e){
+    setSyncError();
+    console.error(e);
+  }
+  document.getElementById('loading').style.display='none';
+}
+init();
+</script>
+</body>
+</html>
