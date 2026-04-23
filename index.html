@@ -707,6 +707,7 @@ async function loadBenchForStudent(){
   benchData=await dbGet(benchKey(id))||{};
   var gender=s.gender||'M';
   var html='<div style="background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.07);display:flex;align-items:center;gap:12px;"><div style="width:40px;height:40px;border-radius:50%;background:#d4ede1;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#0F6E56;">'+initials(s.name)+'</div><div><div style="font-size:14px;font-weight:800;color:#1a3a2a;">'+s.name+'</div><div style="font-size:11px;color:#888;">'+(s.club||'')+(s.gender?' · '+(s.gender==='F'?'Female':'Male'):'')+'</div></div></div>';
+  html+=buildHandicapSection();
   BENCH_TESTS.forEach(function(test){html+=buildBenchTestCard(test,gender);});
   el.innerHTML=html;
 }
@@ -841,6 +842,87 @@ function buildBenchTrendChart(test){
     yLabels+xLabels+dots+
     '</svg>';
   return'<div style="margin-top:10px;background:#fafafa;border-radius:8px;padding:8px 10px;"><div style="font-size:10px;font-weight:800;color:#aaa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Progress</div>'+svg+'</div>';
+}
+
+function buildHandicapSection(){
+  if(!benchData.handicap)benchData.handicap=[];
+  var entries=benchData.handicap.slice().sort(function(a,b){return b.date<a.date?-1:b.date>a.date?1:0;});
+  var latestVal=entries.length?entries[0].value:'';
+  var rows=entries.slice(0,5).map(function(e){
+    return'<div class="bench-log-row">'+
+      '<span class="bench-log-date">'+fmtDate(e.date)+'</span>'+
+      '<span class="bench-log-score">'+e.value+'</span>'+
+      '<span class="bench-log-del" onclick="deleteHandicap('+e.id+')">✕</span>'+
+      '</div>';
+  }).join('');
+  var logsHtml=rows?'<div class="bench-log-list" style="margin-top:10px;">'+rows+'</div>':'<p class="no-bench-entries" style="margin-top:8px;">No entries yet.</p>';
+  return'<div id="handicap-section" class="bench-test-card">'+
+    '<div class="bench-test-hdr" onclick="toggleBenchCard(\'handicap\')">'+
+    '<div class="bench-test-name">⛳ Handicap<span class="bench-test-unit">Lower is better</span></div>'+
+    (latestVal!==''?'<span style="font-size:13px;font-weight:800;color:#0F6E56;">'+latestVal+'</span>':'')+
+    '<span class="bench-test-chev" id="btchev-handicap">▼</span></div>'+
+    '<div class="bench-test-body" id="btbody-handicap">'+
+    '<div class="bench-entry-row">'+
+    '<div class="bench-field"><label>Date</label><input type="date" id="hcap-date" value="'+today()+'"></div>'+
+    '<div class="bench-field"><label>Handicap</label><input type="number" id="hcap-val" step="0.1" min="0" placeholder="e.g. 14.4"></div>'+
+    '<div style="align-self:flex-end;"><button class="bench-log-btn" onclick="logHandicap()">+ Log</button></div>'+
+    '</div>'+
+    logsHtml+
+    buildHandicapTrendChart()+
+    '</div></div>';
+}
+
+function buildHandicapTrendChart(){
+  var pts=(benchData.handicap||[]).slice().sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0;});
+  if(pts.length<2)return'';
+  var color='#0F6E56';
+  var fill='#eef8f2';
+  var W=280,H=80,padL=28,padR=8,padT=8,padB=22;
+  var cW=W-padL-padR,cH=H-padT-padB;
+  var n=pts.length;
+  var vals=pts.map(function(e){return parseFloat(e.value);});
+  var minV=Math.min.apply(null,vals),maxV=Math.max.apply(null,vals);
+  var range=maxV-minV||1;
+  function xPos(i){return padL+i*(cW/(n-1));}
+  function yPos(v){return padT+cH-((parseFloat(v)-minV)/range)*cH;}
+  var linePts=pts.map(function(e,i){return xPos(i)+','+yPos(e.value);}).join(' ');
+  var areaPath='M'+xPos(0)+','+yPos(pts[0].value)+pts.map(function(e,i){return' L'+xPos(i)+','+yPos(e.value);}).join('')+' L'+xPos(n-1)+','+(padT+cH)+' L'+xPos(0)+','+(padT+cH)+' Z';
+  var yLabelMax='<text x="'+(padL-3)+'" y="'+(padT+8)+'" text-anchor="end" font-size="8" fill="#bbb">'+maxV+'</text>';
+  var yLabelMin='<text x="'+(padL-3)+'" y="'+(padT+cH)+'" text-anchor="end" font-size="8" fill="#bbb">'+minV+'</text>';
+  var xLabels='<text x="'+xPos(0)+'" y="'+(H-5)+'" text-anchor="start" font-size="8" fill="#bbb">'+fmtDate(pts[0].date)+'</text>'+
+    '<text x="'+xPos(n-1)+'" y="'+(H-5)+'" text-anchor="end" font-size="8" fill="#bbb">'+fmtDate(pts[n-1].date)+'</text>';
+  var dots=pts.map(function(e,i){return'<circle cx="'+xPos(i)+'" cy="'+yPos(e.value)+'" r="3" fill="'+color+'" stroke="#fff" stroke-width="1.5"/>';}).join('');
+  var svg='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;display:block;">'+
+    '<path d="'+areaPath+'" fill="'+fill+'" opacity="0.5"/>'+
+    '<polyline points="'+linePts+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'+
+    yLabelMax+yLabelMin+xLabels+dots+
+    '</svg>';
+  return'<div style="margin-top:10px;background:#fafafa;border-radius:8px;padding:8px 10px;"><div style="font-size:10px;font-weight:800;color:#aaa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Progress</div>'+svg+'</div>';
+}
+
+function refreshHandicapSection(){
+  var el=document.getElementById('handicap-section');
+  if(!el)return;
+  var tmp=document.createElement('div');
+  tmp.innerHTML=buildHandicapSection();
+  el.replaceWith(tmp.firstChild);
+}
+
+async function logHandicap(){
+  var date=document.getElementById('hcap-date').value||today();
+  var val=document.getElementById('hcap-val').value.trim();
+  if(!val){alert('Please enter a handicap value.');return;}
+  if(!benchData.handicap)benchData.handicap=[];
+  benchData.handicap.push({id:Date.now(),date:date,value:parseFloat(val)});
+  await dbSet(benchKey(benchStudentId),benchData);
+  refreshHandicapSection();
+}
+
+async function deleteHandicap(entryId){
+  if(!confirm('Delete this entry?'))return;
+  benchData.handicap=(benchData.handicap||[]).filter(function(e){return e.id!==entryId;});
+  await dbSet(benchKey(benchStudentId),benchData);
+  refreshHandicapSection();
 }
 
 // ── SCORECARDS ──
