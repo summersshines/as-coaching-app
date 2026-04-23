@@ -425,6 +425,7 @@ var benchStudentId=null,activeScorecardTest=null;
 const BANDS=[{min:1,max:2,label:'Beginning',cls:'band-1'},{min:3,max:4,label:'Progressing',cls:'band-3'},{min:5,max:6,label:'Developing',cls:'band-5'},{min:7,max:8,label:'Performing',cls:'band-7'},{min:9,max:10,label:'Elite',cls:'band-9'}];
 function getBand(lv){if(!lv||lv<1)return null;return BANDS.find(function(b){return lv>=b.min&&lv<=b.max;})||null;}
 const BAND_COLORS=['#c0392b','#c0392b','#856404','#856404','#0F6E56','#0F6E56','#1a4a7a','#1a4a7a','#6b2fa0','#6b2fa0'];
+const BAND_FILLS=['#fde8e8','#fde8e8','#fef3cd','#fef3cd','#eef8f2','#eef8f2','#d0e4f7','#d0e4f7','#ead5f5','#ead5f5'];
 
 const BENCH_TESTS=[
   {key:'long_drive',label:'Long Drive',unit:'Points + Distance (m)',gendered:true,dual:true,f1:'Points',f2:'Metres',
@@ -813,7 +814,33 @@ function buildBenchLogList(test,gender){
       '</div>';
   }).join('');
   var extra=logs.length>5?'<p style="font-size:10px;color:#aaa;padding:4px 2px;">+ '+(logs.length-5)+' earlier entries saved</p>':'';
-  return'<div class="bench-log-list">'+rows+'</div>'+extra;
+  return'<div class="bench-log-list">'+rows+'</div>'+extra+buildBenchTrendChart(test);
+}
+
+function buildBenchTrendChart(test){
+  var all=(benchData[test.key]||[]).slice().sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0;});
+  var pts=all.filter(function(e){return e.level&&e.level>=1;});
+  if(pts.length<2)return'';
+  var avgLv=Math.round(pts.reduce(function(s,e){return s+e.level;},0)/pts.length);
+  var color=BAND_COLORS[Math.min(avgLv-1,9)];
+  var fill=BAND_FILLS[Math.min(avgLv-1,9)];
+  var W=280,H=80,padL=22,padR=8,padT=8,padB=22;
+  var cW=W-padL-padR,cH=H-padT-padB;
+  var n=pts.length;
+  function xPos(i){return padL+i*(cW/(n-1));}
+  function yPos(lv){return padT+cH-(((lv-1)/9)*cH);}
+  var linePts=pts.map(function(e,i){return xPos(i)+','+yPos(e.level);}).join(' ');
+  var areaPath='M'+xPos(0)+','+yPos(pts[0].level)+pts.map(function(e,i){return' L'+xPos(i)+','+yPos(e.level);}).join('')+' L'+xPos(n-1)+','+(padT+cH)+' L'+xPos(0)+','+(padT+cH)+' Z';
+  var yLabels=[1,5,10].map(function(lv){return'<text x="'+(padL-3)+'" y="'+(yPos(lv)+4)+'" text-anchor="end" font-size="8" fill="#bbb">'+lv+'</text>';}).join('');
+  var xLabels='<text x="'+xPos(0)+'" y="'+(H-5)+'" text-anchor="start" font-size="8" fill="#bbb">'+fmtDate(pts[0].date)+'</text>'+
+    '<text x="'+xPos(n-1)+'" y="'+(H-5)+'" text-anchor="end" font-size="8" fill="#bbb">'+fmtDate(pts[n-1].date)+'</text>';
+  var dots=pts.map(function(e,i){return'<circle cx="'+xPos(i)+'" cy="'+yPos(e.level)+'" r="3" fill="'+color+'" stroke="#fff" stroke-width="1.5"/>';}).join('');
+  var svg='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;display:block;">'+
+    '<path d="'+areaPath+'" fill="'+fill+'" opacity="0.5"/>'+
+    '<polyline points="'+linePts+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'+
+    yLabels+xLabels+dots+
+    '</svg>';
+  return'<div style="margin-top:10px;background:#fafafa;border-radius:8px;padding:8px 10px;"><div style="font-size:10px;font-weight:800;color:#aaa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Progress</div>'+svg+'</div>';
 }
 
 // ── SCORECARDS ──
