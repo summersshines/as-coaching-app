@@ -328,8 +328,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f4f0;color:#222;font-
 </div>
 <div class="tabs">
   <div class="tab active" onclick="showTab('students',this)">👤 Students</div>
-  <div class="tab" onclick="showTab('profile-tab',this)">📋 Profile</div>
-  <div class="tab" onclick="showTab('lessons-tab',this)">📝 Lesson Log</div>
   <div class="tab" onclick="showTab('planner-tab',this)">🗓 Planner</div>
   <div class="tab" onclick="showTab('drills-tab',this)">🏌️ Drills</div>
   <div class="tab" onclick="showTab('benchmarks-tab',this)">📊 Benchmarks</div>
@@ -348,16 +346,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f4f0;color:#222;font-
       <button class="back-btn" onclick="closeProfile()">← Back to Students</button>
       <div id="profile-view-content"></div>
     </div>
-  </div>
-
-  <!-- PROFILE stub -->
-  <div id="profile-tab" class="panel">
-    <div class="stub"><div class="stub-icon">📋</div><h3>Profile</h3><p>Select a student from the Students tab.</p></div>
-  </div>
-
-  <!-- LESSON LOG stub -->
-  <div id="lessons-tab" class="panel">
-    <div class="stub"><div class="stub-icon">📝</div><h3>Lesson Log</h3><p>Open a student from the Students tab to access their lesson log.</p></div>
   </div>
 
   <!-- PLANNER TAB -->
