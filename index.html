@@ -31,6 +31,11 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f4f0;color:#222;font-
 .search-bar{width:100%;border:2px solid #0F6E56;border-radius:10px;padding:11px 14px;font-size:15px;font-family:inherit;background:#fff;margin-bottom:12px;-webkit-appearance:none;transition:border .2s;}
 .search-bar:focus{outline:none;border-color:#1a3a2a;}
 .student-count{font-size:11px;color:#888;margin-bottom:10px;}
+.az-bar{display:flex;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin-bottom:10px;padding-bottom:2px;}
+.az-bar::-webkit-scrollbar{display:none;}
+.az-btn{flex-shrink:0;min-width:28px;padding:5px 4px;font-size:11px;font-weight:800;border-radius:6px;border:1.5px solid #ddd;background:#fff;color:#555;cursor:pointer;text-align:center;-webkit-tap-highlight-color:transparent;transition:all .15s;}
+.az-btn.active{background:#0F6E56;color:#fff;border-color:#0F6E56;}
+.az-btn.dimmed{color:#ccc;border-color:#eee;cursor:default;pointer-events:none;}
 .student-list{display:flex;flex-direction:column;gap:8px;}
 .student-card{background:#fff;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 4px rgba(0,0,0,.07);cursor:pointer;transition:box-shadow .2s;border-left:4px solid #0F6E56;-webkit-tap-highlight-color:transparent;}
 .student-card:hover{box-shadow:0 3px 12px rgba(0,0,0,.12);}
@@ -358,6 +363,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f4f0;color:#222;font-
     <div id="students-list-view">
       <button class="add-btn" onclick="openAddSheet()">➕ Add Student</button>
       <input type="text" class="search-bar" id="search" placeholder="🔍 Search students…" oninput="renderList()">
+      <div class="az-bar" id="az-bar"></div>
       <div class="student-count" id="student-count"></div>
       <div class="student-list" id="student-list"></div>
     </div>
@@ -438,7 +444,7 @@ const sb=supabase.createClient(SURL,SKEY);
 var students=[],profileData={},lessonData=[],plannerData=[],benchData={};
 var currentStudentId=null,autoSaveTimer=null,editingLessonId=null,editingPlanId=null,editingFaultIndex=null;
 var drillLibrary=[],activeDrillCat='All',drillView='master',editingDrillId=null;
-var benchStudentId=null,activeScorecardTest=null,plannerStudentId=null;
+var benchStudentId=null,activeScorecardTest=null,plannerStudentId=null,activeLetter='All';
 
 // ── BENCH TESTS CONFIG ──
 const BANDS=[{min:1,max:2,label:'Beginning',cls:'band-1'},{min:3,max:4,label:'Progressing',cls:'band-3'},{min:5,max:6,label:'Developing',cls:'band-5'},{min:7,max:8,label:'Performing',cls:'band-7'},{min:9,max:10,label:'Elite',cls:'band-9'}];
@@ -602,9 +608,25 @@ function scheduleAutoSave(){clearTimeout(autoSaveTimer);setAutoSaveInd('Saving�
 function setAutoSaveInd(msg){var el=document.getElementById('autosave-ind');if(el)el.textContent=msg;}
 
 // ── STUDENT LIST ──
+function getSurnameLetter(name){var parts=(name||'').trim().split(' ').filter(Boolean);var surname=parts.length>1?parts[parts.length-1]:parts[0]||'';return surname[0]?surname[0].toUpperCase():'';}
+function renderAZBar(){
+  var bar=document.getElementById('az-bar');if(!bar)return;
+  var available={};students.forEach(function(s){var l=getSurnameLetter(s.name);if(l)available[l]=true;});
+  var html='<button class="az-btn'+(activeLetter==='All'?' active':'')+'" onclick="setLetterFilter(\'All\')">All</button>';
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(function(l){
+    var has=!!available[l];
+    html+='<button class="az-btn'+(activeLetter===l?' active':has?'':' dimmed')+'" onclick="setLetterFilter(\''+l+'\')">'+l+'</button>';
+  });
+  bar.innerHTML=html;
+}
+function setLetterFilter(l){activeLetter=l;renderList();}
 function renderList(){
+  renderAZBar();
   var search=(document.getElementById('search').value||'').toLowerCase().trim();
-  var filtered=sortByLastName(students).filter(function(s){return !search||s.name.toLowerCase().includes(search)||(s.club||'').toLowerCase().includes(search);});
+  var filtered=sortByLastName(students).filter(function(s){
+    if(activeLetter!=='All'){if(getSurnameLetter(s.name)!==activeLetter)return false;}
+    return !search||s.name.toLowerCase().includes(search)||(s.club||'').toLowerCase().includes(search);
+  });
   document.getElementById('student-count').textContent=filtered.length+' student'+(filtered.length!==1?'s':'');
   var listEl=document.getElementById('student-list');
   if(!filtered.length){listEl.innerHTML='<div class="empty-state"><div class="empty-icon">'+(students.length?'🔍':'🏌️')+'</div><p>'+(students.length?'No match.':'No students yet.<br>Tap <strong>Add Student</strong> to get started.')+'</p></div>';return;}
