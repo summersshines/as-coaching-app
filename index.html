@@ -459,7 +459,7 @@ const BENCH_TESTS=[
    thresholds:{M:[{pts:1,dist:20},{pts:1,dist:40},{pts:2,dist:60},{pts:2,dist:80},{pts:4,dist:100},{pts:4,dist:120},{pts:5,dist:140},{pts:6,dist:150},{pts:6,dist:160},{pts:7,dist:170}],F:[{pts:1,dist:20},{pts:1,dist:30},{pts:2,dist:50},{pts:2,dist:70},{pts:4,dist:85},{pts:4,dist:105},{pts:5,dist:120},{pts:6,dist:130},{pts:6,dist:140},{pts:7,dist:150}]},
    scoreType:'dual_drive',
    desc:'Set up an inner goal 12m wide with outer posts 4m either side. Hit 5 shots with a 7 iron. Score 2pts inside inner goal, 1pt outer posts. Record total points and distance. Level calculated automatically.'},
-  {key:'short_game',label:'Junior Short Game Circuit',unit:'Total points (lower = better)',dual:false,inverse:true,scoreType:'scorecard',
+  {key:'short_game',label:'Junior Short Game Circuit',unit:'Total points (higher = better)',dual:false,scoreType:'scorecard',
    desc:'9-hole short game circuit. Scoring: Holed=4pts, 0–3ft=3pts, 3–6ft=2pts, 6–12ft=1pt, 12ft+=0pts.'},
   {key:'putting',label:'Junior Putting Circuit',unit:'Total putts (lower = better)',dual:false,inverse:true,scoreType:'scorecard',
    desc:'9 putts from: 3, 4, 5, 6, 8, 12, 15, 20 and 30ft. Putt each ball out until holed. Count total putts. Lower is better.'},
@@ -498,10 +498,10 @@ function calcLevel(test,v1,v2,gender){
 function calcScorecardLevel(key,total){
   if(isNaN(total))return null;
   if(key==='short_game'){
-    // Lower is better — 9 holes, max 36pts
-    if(total<=4)return 10;if(total<=6)return 9;if(total<=8)return 8;if(total<=10)return 7;
-    if(total<=13)return 6;if(total<=16)return 5;if(total<=20)return 4;if(total<=24)return 3;
-    if(total<=28)return 2;return 1;
+    // Higher is better — 9 holes, max 36pts
+    if(total>=24)return 10;if(total>=21)return 9;if(total>=18)return 8;if(total>=15)return 7;
+    if(total>=12)return 6;if(total>=9)return 5;if(total>=7)return 4;if(total>=5)return 3;
+    if(total>=3)return 2;return 1;
   }
   if(key==='putting'){
     // 9 putts, lower is better
@@ -976,7 +976,7 @@ function buildShortGameScorecard(){
     var options=opts.map(function(o){return'<label class="sc-option" onclick="scSelect(this)"><input type="radio" name="sg-h'+h.hole+'" value="'+o.v+'"><span class="sc-option-label">'+o.l+'</span></label>';}).join('');
     return'<div class="sc-hole"><div class="sc-hole-title">Hole '+h.hole+' — '+h.desc+'</div><div class="sc-options">'+options+'</div></div>';
   }).join('');
-  return'<div class="scorecard"><div class="scorecard-title">Short Game Circuit</div><div class="scorecard-subtitle">9 holes — lower score is better</div>'+holes+'<div class="sc-total-row"><span class="sc-total-label">Total Points</span><span class="sc-total-val" id="sg-total">—</span></div><div class="sc-level-preview" id="sg-preview"><span style="color:#aaa;font-size:12px;">Complete all holes to see level</span></div><button class="sc-save-btn" onclick="saveScorecard(\'short_game\')">Save Result</button><button class="sc-cancel-btn" onclick="closeScorecard(\'short_game\')">Cancel</button></div>';
+  return'<div class="scorecard"><div class="scorecard-title">Short Game Circuit</div><div class="scorecard-subtitle">9 holes — higher score is better</div>'+holes+'<div class="sc-total-row"><span class="sc-total-label">Total Points</span><span class="sc-total-val" id="sg-total">—</span></div><div class="sc-level-preview" id="sg-preview"><span style="color:#aaa;font-size:12px;">Complete all holes to see level</span></div><button class="sc-save-btn" onclick="saveScorecard(\'short_game\')">Save Result</button><button class="sc-cancel-btn" onclick="closeScorecard(\'short_game\')">Cancel</button></div>';
 }
 
 function buildPuttingScorecard(){
