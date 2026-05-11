@@ -44,6 +44,8 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f4f0;color:#222;font-
 .student-name{font-size:14px;font-weight:800;color:#1a3a2a;}
 .student-club{font-size:11px;color:#888;margin-top:2px;}
 .student-arrow{font-size:14px;color:#ccc;flex-shrink:0;}
+.student-edit{font-size:14px;cursor:pointer;color:#ccc;padding:4px;transition:color .2s;flex-shrink:0;}
+.student-edit:hover{color:#0F6E56;}
 .student-del{font-size:16px;cursor:pointer;color:#ddd;padding:4px;transition:color .2s;flex-shrink:0;}
 .student-del:hover{color:#e55;}
 .empty-state{text-align:center;padding:48px 20px;color:#999;}
@@ -327,6 +329,32 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f4f0;color:#222;font-
 .stub h3{font-size:15px;font-weight:800;color:#1a3a2a;margin-bottom:6px;}
 .stub p{font-size:12px;color:#888;line-height:1.6;}
 
+/* ── REPORTS ── */
+.rpt-student-sel{background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.07);}
+.rpt-select-all-row{display:flex;align-items:center;gap:8px;padding:0 0 10px;border-bottom:1px solid #f0f0ec;margin-bottom:8px;}
+.rpt-select-all-row label{font-size:12px;font-weight:700;color:#1a3a2a;cursor:pointer;}
+.rpt-select-all-row input[type=checkbox]{width:16px;height:16px;accent-color:#0F6E56;cursor:pointer;flex-shrink:0;}
+.rpt-student-list{max-height:220px;overflow-y:auto;}
+.rpt-student-item{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid #f4f4f0;}
+.rpt-student-item:last-child{border-bottom:none;}
+.rpt-student-item input[type=checkbox]{width:16px;height:16px;accent-color:#0F6E56;cursor:pointer;flex-shrink:0;}
+.rpt-student-item-info{flex:1;min-width:0;}
+.rpt-student-item-name{font-size:13px;font-weight:700;color:#1a3a2a;}
+.rpt-student-item-club{font-size:11px;color:#888;margin-top:1px;}
+.rpt-generate-btn{width:100%;padding:14px;background:#0F6E56;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:8px;-webkit-tap-highlight-color:transparent;transition:background .2s;}
+.rpt-generate-btn:hover{background:#1a3a2a;}
+.rpt-card{background:#fff;border-radius:12px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.07);overflow:hidden;border-top:4px solid #0F6E56;}
+.rpt-card-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #f0f0ec;gap:10px;}
+.rpt-card-name{font-size:14px;font-weight:900;color:#1a3a2a;}
+.rpt-card-status{border:1.5px solid #ddd;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;font-family:inherit;background:#fafafa;cursor:pointer;-webkit-appearance:none;}
+.rpt-card-textarea{width:100%;border:none;border-bottom:1px solid #f0f0ec;padding:14px 16px;font-size:13px;font-family:'Segoe UI',Arial,sans-serif;background:#fafafa;resize:vertical;min-height:240px;line-height:1.7;outline:none;}
+.rpt-card-footer{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#fff;}
+.rpt-char-count{font-size:11px;color:#aaa;}
+.rpt-print-btn{font-size:12px;font-weight:700;color:#0F6E56;background:none;border:1.5px solid #a8d5b8;border-radius:8px;padding:7px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.rpt-print-btn:hover{background:#eef8f2;}
+.rpt-print-all-btn{width:100%;padding:14px;background:#1a3a2a;color:#EF9F27;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:8px;-webkit-tap-highlight-color:transparent;transition:background .2s;}
+.rpt-print-all-btn:hover{background:#0a2218;}
+
 /* ── OVERLAY ── */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;display:none;align-items:flex-end;justify-content:center;}
 .overlay.open{display:flex;}
@@ -355,6 +383,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f4f0;color:#222;font-
   <div class="tab" onclick="showTab('planner-tab',this)">🗓 Planner</div>
   <div class="tab" onclick="showTab('drills-tab',this)">🏌️ Drills</div>
   <div class="tab" onclick="showTab('benchmarks-tab',this)">📊 Benchmarks</div>
+  <div class="tab" onclick="showTab('reports-tab',this)">📄 Reports</div>
 </div>
 <div class="content">
 
@@ -414,6 +443,24 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f4f0;color:#222;font-
     <div id="bench-content"></div>
   </div>
 
+  <!-- REPORTS TAB -->
+  <div id="reports-tab" class="panel">
+    <div class="dl-view-tabs">
+      <button class="dl-view-tab active" id="rpt-tab-full" onclick="setReportType('full')">📋 Full Report</button>
+      <button class="dl-view-tab" id="rpt-tab-program" onclick="setReportType('program')">🎯 Program Report</button>
+    </div>
+    <div class="rpt-student-sel">
+      <div class="rpt-select-all-row">
+        <input type="checkbox" id="rpt-select-all" onchange="toggleSelectAllReports(this.checked)">
+        <label for="rpt-select-all">Select All</label>
+      </div>
+      <div class="rpt-student-list" id="rpt-student-list"></div>
+    </div>
+    <button class="rpt-generate-btn" onclick="generateReports()">📄 Generate Reports</button>
+    <button class="new-plan-btn" onclick="document.getElementById('report-output-area').innerHTML='<p style=\'padding:20px 4px;font-size:14px;color:#1a3a2a;\'>🤖 AI reporting coming soon — connect your API to activate this feature.</p>'">🤖 AI Report</button>
+    <div id="report-output-area"></div>
+  </div>
+
 </div>
 
 <!-- ADD STUDENT SHEET -->
@@ -432,6 +479,21 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f4f0;color:#222;font-
     <div class="sheet-actions">
       <button class="btn-cancel" onclick="closeAddSheet()">Cancel</button>
       <button class="btn-save" onclick="saveStudent()">Save Student</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT STUDENT SHEET -->
+<div class="overlay" id="edit-overlay" onclick="editOverlayClick(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Edit Student</div>
+    <div class="fr"><label>Full Name</label><input type="text" id="e-name" placeholder="First & last name" autocomplete="off"></div>
+    <div class="fr"><label>Club / Program</label><input type="text" id="e-club" placeholder="e.g. Ryde Parramatta GC" autocomplete="off"></div>
+    <input type="hidden" id="e-student-id">
+    <div class="sheet-actions">
+      <button class="btn-cancel" onclick="closeEditSheet()">Cancel</button>
+      <button class="btn-save" onclick="saveEditStudent()">Save Changes</button>
     </div>
   </div>
 </div>
@@ -582,6 +644,7 @@ function showTab(id,el){
   if(id==='planner-tab')populatePlannerStudentSelect();
   if(id==='drills-tab')renderDrills();
   if(id==='benchmarks-tab')populateBenchStudentSelect();
+  if(id==='reports-tab')renderReportStudentList();
 }
 
 // ── DB ──
@@ -633,7 +696,8 @@ function renderList(){
   listEl.innerHTML='';
   filtered.forEach(function(s){
     var card=document.createElement('div');card.className='student-card';
-    card.innerHTML='<div class="student-avatar">'+initials(s.name)+'</div><div class="student-info"><div class="student-name">'+s.name+'</div>'+(s.club?'<div class="student-club">'+s.club+(s.gender?' · '+(s.gender==='F'?'Female':'Male'):'')+'</div>':'<div class="student-club" style="color:#ccc;">No club set</div>')+'</div><span class="student-arrow">›</span><span class="student-del" title="Remove">✕</span>';
+    card.innerHTML='<div class="student-avatar">'+initials(s.name)+'</div><div class="student-info"><div class="student-name">'+s.name+'</div>'+(s.club?'<div class="student-club">'+s.club+(s.gender?' · '+(s.gender==='F'?'Female':'Male'):'')+'</div>':'<div class="student-club" style="color:#ccc;">No club set</div>')+'</div><span class="student-arrow">›</span><span class="student-edit" title="Edit">✏️</span><span class="student-del" title="Remove">✕</span>';
+    card.querySelector('.student-edit').onclick=function(e){e.stopPropagation();openEditSheet(s.id);};
     card.querySelector('.student-del').onclick=function(e){e.stopPropagation();deleteStudent(s.id);};
     card.querySelector('.student-info').onclick=function(){openProfile(s.id);};
     card.querySelector('.student-avatar').onclick=function(){openProfile(s.id);};
@@ -650,6 +714,10 @@ async function saveStudent(){
   await dbSet('hub_students',students);closeAddSheet();renderList();populatePlannerStudentSelect();populateBenchStudentSelect();
 }
 async function deleteStudent(id){var s=students.find(function(x){return String(x.id)===String(id);});if(!s)return;if(!confirm('Remove '+s.name+'?'))return;students=students.filter(function(x){return String(x.id)!==String(id);});await dbSet('hub_students',students);renderList();populatePlannerStudentSelect();populateBenchStudentSelect();}
+function openEditSheet(id){var s=students.find(function(x){return String(x.id)===String(id);});if(!s)return;document.getElementById('e-student-id').value=id;document.getElementById('e-name').value=s.name;document.getElementById('e-club').value=s.club||'';document.getElementById('edit-overlay').classList.add('open');setTimeout(function(){document.getElementById('e-name').focus();},200);}
+function closeEditSheet(){document.getElementById('edit-overlay').classList.remove('open');}
+function editOverlayClick(e){if(e.target===document.getElementById('edit-overlay'))closeEditSheet();}
+async function saveEditStudent(){var id=document.getElementById('e-student-id').value;var name=document.getElementById('e-name').value.trim();if(!name){alert('Please enter a name.');return;}var club=document.getElementById('e-club').value.trim();var idx=students.findIndex(function(x){return String(x.id)===String(id);});if(idx<0)return;students[idx].name=name;students[idx].club=club;await dbSet('hub_students',students);var profile=await dbGet(profileKey(id))||{goals:[],faults:[],focusAreas:[]};profile.name=name;profile.club=club;await dbSet(profileKey(id),profile);closeEditSheet();renderList();populatePlannerStudentSelect();populateBenchStudentSelect();}
 
 // ── PROFILE ──
 async function openProfile(id){
@@ -1070,6 +1138,282 @@ async function saveScorecard(key){
 function closeScorecard(key){
   activeScorecardTest=null;
   var wrap=document.getElementById('sc-wrap-'+key);if(wrap)wrap.innerHTML='';
+}
+
+// ── REPORTS ──
+var reportType='full';
+var SCORE_BETTER_DRILLS={
+  d11:{name:'Wedge Combine 30-70m',cat:'Pitching'},
+  d47:{name:'The Surgeon 4ft Eliminator',cat:'Putting'},
+  d62:{name:'4-5-6 Circuit 9 Putts',cat:'Putting'},
+  d78:{name:'Junior Putting Circuit',cat:'Putting'},
+  d79:{name:'Junior Short Game Circuit',cat:'Mixed'},
+  d99:{name:'The Ascent',cat:'Putting'},
+  d100:{name:'The Retreat',cat:'Putting'},
+  d8:{name:'Full Range Combine 10-100m',cat:'Pitching'},
+  d29:{name:'Bump and Run',cat:'Chipping'},
+  d15:{name:'Fairway 3 10-30m',cat:'Chipping'},
+  d16:{name:'Bunker 10-30m',cat:'Bunker'},
+  d82:{name:'Mid Range Mix',cat:'Bunker'}
+};
+function setReportType(type){reportType=type;document.getElementById('rpt-tab-full').className='dl-view-tab'+(type==='full'?' active':'');document.getElementById('rpt-tab-program').className='dl-view-tab'+(type==='program'?' active':'');}
+function renderReportStudentList(){var el=document.getElementById('rpt-student-list');if(!el)return;var sorted=sortByLastName(students);if(!sorted.length){el.innerHTML='<p style="font-size:12px;color:#aaa;padding:8px 0;">No students found.</p>';return;}el.innerHTML=sorted.map(function(s){return'<div class="rpt-student-item"><input type="checkbox" class="rpt-student-cb" value="'+s.id+'" id="rptcb-'+s.id+'"><div class="rpt-student-item-info"><div class="rpt-student-item-name">'+escHtml(s.name)+'</div>'+(s.club?'<div class="rpt-student-item-club">'+escHtml(s.club)+'</div>':'')+'</div></div>';}).join('');var allCb=document.getElementById('rpt-select-all');if(allCb)allCb.checked=false;}
+function toggleSelectAllReports(checked){document.querySelectorAll('.rpt-student-cb').forEach(function(cb){cb.checked=checked;});}
+function getSBDrillLogs(sbProfile){
+  var src=(sbProfile&&sbProfile.drillLogs)?sbProfile.drillLogs:((sbProfile&&sbProfile.drills)?sbProfile.drills:sbProfile);
+  var result={};
+  if(!src||typeof src!=='object')return result;
+  console.log('[Reports] getSBDrillLogs — src keys:',Object.keys(src));
+  Object.keys(SCORE_BETTER_DRILLS).forEach(function(did){
+    var numKey=did.replace(/^d/,'');
+    var data=src[did]||src[numKey]||null;
+    if(data&&Array.isArray(data)&&data.length){result[did]=data;}
+    else{console.log('[Reports] No log data for drill '+did+' (tried keys "'+did+'" and "'+numKey+'")');}
+  });
+  console.log('[Reports] getSBDrillLogs — matched drills:',Object.keys(result));
+  return result;
+}
+function buildReportText(student,bData,profile,sbProfile){
+  var firstname=(student.name||'').trim().split(' ')[0];
+  var goals=(profile.goals||[]).map(function(g){return g.replace(/\n/g,' ').trim();});
+  var sbGoal=(sbProfile&&sbProfile.goal)?sbProfile.goal.replace(/\n/g,' ').trim():'';
+  var lines=[];
+  // Opening
+  lines.push('Hi '+firstname+',');
+  lines.push('');
+  if(goals.length){
+    lines.push('It\'s great to see the work you\'re putting in towards '+(goals.length===1?'your goal of "'+goals[0]+'"':'your goals')+'. I\'ve put together this report as an overview of your progress and where we\'re heading together.');
+  }else if(sbGoal){
+    lines.push('It\'s great to see the work you\'re putting in towards your goal of "'+sbGoal+'". I\'ve put together this report as an overview of your progress and where we\'re heading together.');
+  }else{
+    lines.push('I\'ve put together this report to give you a clear picture of your current progress and development.');
+  }
+  var isFullReport=(reportType==='full');
+  // Benchmark section (Full Report only)
+  if(isFullReport){
+    console.log('[Reports] buildReportText benchmark — bData keys:',Object.keys(bData));
+    console.log('[Reports] buildReportText benchmark — BENCH_TESTS keys:',BENCH_TESTS.map(function(t){return t.key;}));
+    var benchLines=[];
+    BENCH_TESTS.forEach(function(test){
+      var logs=(bData[test.key]||[]).slice().sort(function(a,b){return a.date<b.date?-1:1;});
+      console.log('[Reports] bench "'+test.key+'" — entries found:',logs.length);
+      if(!logs.length)return;
+      var latest=logs[logs.length-1];
+      var band=latest.level?getBand(latest.level):null;
+      var line='  '+test.label+': Level '+(latest.level||'—')+(band?' ('+band.label+')':'');
+      if(logs.length>1&&logs[0].level&&latest.level){
+        var diff=latest.level-logs[0].level;
+        line+=diff>0?' — improving ▲':diff<0?' — declining ▼':' — stable';
+      }
+      benchLines.push(line);
+    });
+    var hcapEntries=(bData.handicap||[]).slice().sort(function(a,b){return a.date<b.date?-1:1;});
+    console.log('[Reports] bench "handicap" — entries found:',hcapEntries.length);
+    var hcapLine='';
+    if(hcapEntries.length){
+      var lh=hcapEntries[hcapEntries.length-1];
+      hcapLine='  Handicap: '+lh.value;
+      if(hcapEntries.length>1){
+        var hd=parseFloat(lh.value)-parseFloat(hcapEntries[0].value);
+        hcapLine+=hd<-0.4?' (improving ▼)':hd>0.4?' (trending up ▲)':' (stable)';
+      }
+    }
+    if(benchLines.length||hcapLine){
+      lines.push('');
+      lines.push('BENCHMARK RESULTS');
+      benchLines.forEach(function(l){lines.push(l);});
+      if(hcapLine)lines.push(hcapLine);
+    }
+  }
+  // Score Better section
+  if(sbProfile){
+    console.log('[Reports] buildReportText: sbProfile received, top-level keys:',Object.keys(sbProfile));
+    var drillLogs=getSBDrillLogs(sbProfile);
+    console.log('[Reports] buildReportText: drillLogs result:',drillLogs);
+    var catData={};
+    Object.keys(drillLogs).forEach(function(did){
+      var drill=SCORE_BETTER_DRILLS[did];if(!drill)return;
+      var logs=drillLogs[did].slice().sort(function(a,b){return a.date<b.date?-1:1;});
+      var latest=logs[logs.length-1];
+      console.log('[Reports] drill '+did+' latest log entry:',latest);
+      var pi=latest.pi!==undefined?latest.pi:(latest.score!==undefined?latest.score:(latest.performance_index!==undefined?latest.performance_index:(latest.result!==undefined?latest.result:null)));
+      console.log('[Reports] drill '+did+' pi resolved to:',pi);
+      if(pi===null||pi===undefined)return;
+      if(!catData[drill.cat])catData[drill.cat]=[];
+      catData[drill.cat].push({name:drill.name,pi:Math.round(pi)});
+    });
+    var catKeys=Object.keys(catData);
+    if(catKeys.length){
+      lines.push('');
+      lines.push('PROGRAM DRILL PERFORMANCE');
+      catKeys.forEach(function(cat){
+        var drills=catData[cat];
+        lines.push('');
+        lines.push(cat+':');
+        var total=0;
+        drills.forEach(function(d){lines.push('  '+d.name+': '+(d.pi===0?'0 PI (baseline)':d.pi+' PI'));total+=d.pi;});
+        var avg=Math.round(total/drills.length);
+        lines.push('  Category average: '+avg+' PI');
+        var sorted=drills.slice().sort(function(a,b){return b.pi-a.pi;});
+        var best=sorted[0];var worst=sorted[sorted.length-1];var multi=drills.length>1;
+        if(avg<20){
+          lines.push('  This is an exciting starting point for your '+cat.toLowerCase()+'. These early scores set the baseline, and with dedicated practice I\'m confident we\'ll see real improvement ahead.');
+        }else if(avg>70){
+          lines.push('  Strong work'+(multi?' — your '+best.name+' score in particular stands out. Keep building on this momentum.':' — your '+best.name+' score reflects real skill and consistency. Keep building on this momentum.'));
+        }else if(avg>=50){
+          if(multi){lines.push('  You\'re making solid progress, with your '+best.name+' as a real highlight. We\'ll keep working to bring your '+worst.name+' up to the same level.');}
+          else{lines.push('  You\'re making solid progress with your '+best.name+'. There\'s still room to develop here and I\'m confident those scores will keep climbing.');}
+        }else{
+          if(multi){lines.push('  We\'ll continue to develop your '+cat.toLowerCase()+' together, with a particular focus on your '+worst.name+'. Your commitment is showing and those scores will rise.');}
+          else{lines.push('  Your '+best.name+' is an area we\'ll continue to develop together. Your commitment is showing and with focused practice those scores will rise.');}
+        }
+      });
+    }
+  }
+  // Closing
+  lines.push('');
+  if(goals.length){
+    lines.push('Keep working towards your goal of "'+goals[0]+'". I\'m looking forward to our next session and seeing your continued progress.');
+  }else if(sbGoal){
+    lines.push('Keep working towards your goal of "'+sbGoal+'". I\'m looking forward to our next session and seeing your continued progress.');
+  }else{
+    lines.push('Keep up the great work and I look forward to our next session together.');
+  }
+  lines.push('');
+  lines.push('Anthony Summers');
+  return lines.join('\n');
+}
+function buildReportCard(student,text,idx){
+  return'<div class="rpt-card" id="rpt-card-'+idx+'">'+
+    '<div class="rpt-card-hdr">'+
+      '<div class="rpt-card-name">'+escHtml(student.name)+'</div>'+
+      '<select class="rpt-card-status">'+
+        '<option value="draft">Draft</option>'+
+        '<option value="edited">Edited</option>'+
+        '<option value="ready">Ready</option>'+
+      '</select>'+
+    '</div>'+
+    '<textarea class="rpt-card-textarea" id="rpt-ta-'+idx+'" oninput="updateRptCharCount('+idx+')">'+escHtml(text)+'</textarea>'+
+    '<div class="rpt-card-footer">'+
+      '<span class="rpt-char-count" id="rpt-cc-'+idx+'">'+text.length+' chars</span>'+
+      '<button class="rpt-print-btn" onclick="printReport('+idx+')">🖨 Print</button>'+
+    '</div>'+
+  '</div>';
+}
+async function generateReports(){
+  var selected=[];
+  document.querySelectorAll('.rpt-student-cb:checked').forEach(function(cb){selected.push(cb.value);});
+  if(!selected.length){alert('Please select at least one student.');return;}
+  var outEl=document.getElementById('report-output-area');
+  outEl.innerHTML='<p style="text-align:center;padding:24px;color:#888;font-size:13px;">Generating reports…</p>';
+  console.log('[Reports] Fetching score_better_profiles…');
+  var sbRaw=await dbGet('score_better_profiles');
+  if(sbRaw===null||sbRaw===undefined){console.warn('[Reports] score_better_profiles returned',sbRaw);}
+  else{console.log('[Reports] score_better_profiles fetched — entries:',Array.isArray(sbRaw)?sbRaw.length:'(not an array)',sbRaw);}
+  var sbProfiles=sbRaw||[];
+  var sbNames=sbProfiles.map(function(p){return p&&p.name?p.name:'(no name)';});
+  console.log('[Reports] Score Better profile names found:',sbNames);
+  var cards=[];
+  for(var i=0;i<selected.length;i++){
+    var sid=selected[i];
+    var student=students.find(function(x){return String(x.id)===String(sid);});
+    if(!student)continue;
+    console.log('[Reports] --- Student:',student.name,'(id:'+sid+') ---');
+    console.log('[Reports] Fetching hub_student_'+sid+'…');
+    var profileRaw=await dbGet('hub_student_'+sid);
+    if(profileRaw===null||profileRaw===undefined){console.warn('[Reports] hub_student_'+sid+' returned',profileRaw);}
+    else{console.log('[Reports] hub_student_'+sid+':',profileRaw);}
+    var profile=profileRaw||{goals:[],faults:[],focusAreas:[]};
+    console.log('[Reports] Fetching hub_benchmarks_'+sid+'…');
+    var bRaw=await dbGet('hub_benchmarks_'+sid);
+    if(bRaw===null||bRaw===undefined){
+      console.warn('[Reports] hub_benchmarks_'+sid+' returned null — scanning all hub_benchmarks_ keys by name');
+      var bKeysRes=await sb.from('jdp_data').select('key').like('key','hub_benchmarks_%');
+      var bKeys=(bKeysRes.data||[]).map(function(r){return r.key;});
+      console.log('[Reports] hub_benchmarks_ keys in Supabase:',bKeys);
+      for(var k=0;k<bKeys.length;k++){
+        var bKey=bKeys[k];
+        var bId=bKey.replace('hub_benchmarks_','');
+        if(String(bId)===String(sid))continue;
+        var testProfile=await dbGet('hub_student_'+bId);
+        if(testProfile&&testProfile.name&&testProfile.name.toLowerCase().trim()===student.name.toLowerCase().trim()){
+          console.log('[Reports] Name match via hub_student_'+bId+' — fetching '+bKey);
+          bRaw=await dbGet(bKey);
+          if(bRaw!==null&&bRaw!==undefined){console.log('[Reports] '+bKey+':',bRaw);}
+          break;
+        }
+      }
+      if(bRaw===null||bRaw===undefined){console.warn('[Reports] No benchmark data found for "'+student.name+'" after full scan');}
+    }else{console.log('[Reports] hub_benchmarks_'+sid+':',bRaw);}
+    var bData=bRaw||{};
+    console.log('[Reports] Searching Score Better for name: "'+student.name.toLowerCase().trim()+'"');
+    var sbProfile=null;
+    for(var j=0;j<sbProfiles.length;j++){
+      if(sbProfiles[j]&&sbProfiles[j].name&&sbProfiles[j].name.toLowerCase().trim()===student.name.toLowerCase().trim()){
+        sbProfile=sbProfiles[j];break;
+      }
+    }
+    if(sbProfile){console.log('[Reports] Score Better match FOUND for',student.name,':',sbProfile);}
+    else{console.warn('[Reports] Score Better match NOT FOUND for "'+student.name+'" — available names:',sbNames);}
+    cards.push({student:student,text:buildReportText(student,bData,profile,sbProfile)});
+  }
+  outEl.innerHTML=cards.map(function(c,idx){return buildReportCard(c.student,c.text,idx);}).join('')+
+    (cards.length>1?'<button class="rpt-print-all-btn" onclick="printAllReports()">🖨 Print All Reports</button>':'');
+}
+function updateRptCharCount(idx){var ta=document.getElementById('rpt-ta-'+idx);var cc=document.getElementById('rpt-cc-'+idx);if(ta&&cc)cc.textContent=ta.value.length+' chars';}
+function printReport(idx){
+  var ta=document.getElementById('rpt-ta-'+idx);if(!ta)return;
+  var nameEl=document.querySelector('#rpt-card-'+idx+' .rpt-card-name');
+  var studentName=nameEl?nameEl.textContent:'';
+  var today=new Date().toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'});
+  var css=
+    '*{margin:0;padding:0;box-sizing:border-box;}'+
+    'body{font-family:Arial,sans-serif;font-size:12pt;color:#222;background:#fff;padding:48px 52px;max-width:640px;margin:0 auto;line-height:1.8;}'+
+    '.print-hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:1.5px solid #ccc;padding-bottom:10px;margin-bottom:28px;font-size:9pt;color:#666;}'+
+    '.print-brand{font-weight:900;color:#0F6E56;font-size:16pt;letter-spacing:0.01em;}'+
+    '.student-name{font-size:18pt;font-weight:900;color:#1a3a2a;margin-bottom:22px;}'+
+    '.report-body{white-space:pre-wrap;font-size:12pt;}'+
+    '@media print{body{padding:24px 36px;}}';
+  var win=window.open('','_blank','width=720,height=960');
+  win.document.write(
+    '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Student Report — '+escHtml(studentName)+'</title>'+
+    '<style>'+css+'</style></head><body>'+
+    '<div class="print-hdr"><span class="print-brand">AS Coaching — Student Report</span><span>'+escHtml(today)+'</span></div>'+
+    '<div class="student-name">'+escHtml(studentName)+'</div>'+
+    '<div class="report-body">'+escHtml(ta.value)+'</div>'+
+    '</body></html>'
+  );
+  win.document.close();win.print();
+}
+function printAllReports(){
+  var cards=document.querySelectorAll('.rpt-card');
+  var today=new Date().toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'});
+  var css=
+    '*{margin:0;padding:0;box-sizing:border-box;}'+
+    'body{font-family:Arial,sans-serif;font-size:12pt;color:#222;background:#fff;padding:48px 52px;max-width:640px;margin:0 auto;line-height:1.8;}'+
+    '.print-hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:1.5px solid #ccc;padding-bottom:10px;margin-bottom:28px;font-size:9pt;color:#666;}'+
+    '.print-brand{font-weight:900;color:#0F6E56;font-size:16pt;letter-spacing:0.01em;}'+
+    '.student-name{font-size:18pt;font-weight:900;color:#1a3a2a;margin-bottom:22px;}'+
+    '.report-body{white-space:pre-wrap;font-size:12pt;}'+
+    '.page-sep{page-break-after:always;height:1px;}'+
+    '@media print{body{padding:24px 36px;}}';
+  var sections=[];
+  cards.forEach(function(card){
+    var nameEl=card.querySelector('.rpt-card-name');
+    var ta=card.querySelector('.rpt-card-textarea');
+    if(!ta)return;
+    var studentName=nameEl?nameEl.textContent:'';
+    sections.push('<div class="student-name">'+escHtml(studentName)+'</div><div class="report-body">'+escHtml(ta.value)+'</div>');
+  });
+  var win=window.open('','_blank','width=720,height=960');
+  win.document.write(
+    '<!DOCTYPE html><html><head><meta charset="utf-8"><title>AS Coaching — Student Reports</title>'+
+    '<style>'+css+'</style></head><body>'+
+    '<div class="print-hdr"><span class="print-brand">AS Coaching — Student Reports</span><span>'+escHtml(today)+'</span></div>'+
+    sections.join('<div class="page-sep"></div>')+
+    '</body></html>'
+  );
+  win.document.close();win.print();
 }
 
 // ── SECTION TOGGLE ──
