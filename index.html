@@ -355,6 +355,26 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f4f0;color:#222;font-
 .rpt-print-all-btn{width:100%;padding:14px;background:#1a3a2a;color:#EF9F27;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:8px;-webkit-tap-highlight-color:transparent;transition:background .2s;}
 .rpt-print-all-btn:hover{background:#0a2218;}
 
+/* ── FAULT MANAGEMENT ── */
+.fault-mgmt-card{background:#fff;border-radius:12px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.07);overflow:hidden;}
+.fault-mgmt-hdr{display:flex;align-items:center;gap:10px;padding:13px 16px;}
+.fault-mgmt-name{flex:1;font-size:13px;font-weight:800;color:#1a3a2a;}
+.fault-mgmt-count{font-size:11px;font-weight:700;background:#eef8f2;color:#0F6E56;border:1px solid #a8d5b8;border-radius:6px;padding:3px 9px;flex-shrink:0;white-space:nowrap;}
+.fault-mgmt-edit-btn{font-size:11px;font-weight:700;color:#0F6E56;background:none;border:none;cursor:pointer;padding:4px 6px;flex-shrink:0;}
+.fault-mgmt-del-btn{font-size:13px;font-weight:700;color:#ddd;background:none;border:none;cursor:pointer;padding:4px 6px;flex-shrink:0;transition:color .2s;}
+.fault-mgmt-del-btn:hover{color:#e55;}
+.fault-rename-wrap{padding:0 16px 14px;border-top:1px solid #f0f0ec;}
+.fault-rename-row{display:flex;gap:8px;margin-top:10px;align-items:center;}
+.fault-rename-input{flex:1;border:1.5px solid #0F6E56;border-radius:8px;padding:9px 12px;font-size:14px;font-family:inherit;background:#fff;-webkit-appearance:none;outline:none;}
+.fault-rename-save{padding:9px 16px;background:#0F6E56;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap;}
+.fault-rename-cancel{padding:9px 12px;background:#f0f0ec;color:#666;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;}
+.fault-add-form{background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.07);border-top:4px solid #0F6E56;}
+.fault-add-row{display:flex;gap:8px;margin-top:10px;}
+.fault-add-input{flex:1;border:1.5px solid #ddd;border-radius:8px;padding:10px 12px;font-size:14px;font-family:inherit;background:#fafafa;-webkit-appearance:none;transition:border .2s;}
+.fault-add-input:focus{outline:none;border-color:#0F6E56;background:#fff;}
+.fault-add-save{padding:10px 18px;background:#0F6E56;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;}
+.fault-add-cancel{padding:10px 14px;background:#f0f0ec;color:#666;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;}
+
 /* ── OVERLAY ── */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;display:none;align-items:flex-end;justify-content:center;}
 .overlay.open{display:flex;}
@@ -380,6 +400,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f4f0;color:#222;font-
 </div>
 <div class="tabs">
   <div class="tab active" onclick="showTab('students',this)">👤 Students</div>
+  <div class="tab" onclick="showTab('faults-tab',this)">⚠️ Faults</div>
   <div class="tab" onclick="showTab('planner-tab',this)">🗓 Planner</div>
   <div class="tab" onclick="showTab('drills-tab',this)">🏌️ Drills</div>
   <div class="tab" onclick="showTab('benchmarks-tab',this)">📊 Benchmarks</div>
@@ -400,6 +421,13 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f4f0;color:#222;font-
       <button class="back-btn" onclick="closeProfile()">← Back to Students</button>
       <div id="profile-view-content"></div>
     </div>
+  </div>
+
+  <!-- FAULTS TAB -->
+  <div id="faults-tab" class="panel">
+    <button class="add-btn" onclick="showFaultAddForm()">➕ Add Fault</button>
+    <div id="fault-add-form-wrap"></div>
+    <div id="faults-list"></div>
   </div>
 
   <!-- PLANNER TAB -->
@@ -504,7 +532,7 @@ const SKEY='sb_publishable_zLIVnPYNxlyyAsYrkq9LJg_ztRZaJFp';
 const sb=supabase.createClient(SURL,SKEY);
 
 var students=[],profileData={},lessonData=[],plannerData=[],benchData={};
-var currentStudentId=null,autoSaveTimer=null,editingLessonId=null,editingPlanId=null,editingFaultIndex=null;
+var currentStudentId=null,autoSaveTimer=null,editingLessonId=null,editingPlanId=null,editingFaultIndex=null,editingFaultName=null;
 var drillLibrary=[],activeDrillCat='All',drillView='master',editingDrillId=null;
 var benchStudentId=null,activeScorecardTest=null,plannerStudentId=null,activeLetter='All';
 
@@ -632,8 +660,81 @@ const FAULT_DRILLS={
   'Chipping fat/thin contact':['Set up Fundamentals','Two tee drill','Shadow drill','Lead arm and club line up post impact'],
   'Bunker fat/thin contact':['Set up Fundamentals','Volcano Island','Shadow drill'],
   'General / Other':['Step drill','Trail foot balance drill (bucket)','Hula Hoop Backswings','Push away/wind up','Plane sticks','Tap sticks (lead hip)'],
-  'Putting':['Set up Fundamentals','Stability keep pressure even','Start line gate drill','Chalk line','Speed','Read','Knees and nose stay still']
+  'Putting':['Set up Fundamentals','Stability keep pressure even','Start line gate drill','Chalk line','Speed','Read','Knees and nose stay still'],
+  'Post-impact flyaway':['Farmer\'s carries (lead hand)','Dead hangs','Side plank progressions','Band pull-aparts','Wrist roller','Towel drill — lead arm connection','Punch shot hold','Lead arm only swings','Finish position set and swing','Speed threshold ramp','Whoosh drill — speed with structure','SuperSpeed Junior — finish hold protocol'],
+  'Early/Over rotation — arms and club left behind':[]
 };
+
+// ── FAULT MANAGEMENT ──
+async function saveFaultsToDB(){await dbSet('hub_faults',FAULT_DRILLS);}
+function renderFaultsTab(){
+  var el=document.getElementById('faults-list');if(!el)return;
+  var names=Object.keys(FAULT_DRILLS);
+  if(!names.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">⚠️</div><p>No faults defined yet.</p></div>';return;}
+  el.innerHTML=names.map(function(name){return buildFaultMgmtCard(name);}).join('');
+  if(editingFaultName){setTimeout(function(){var i=document.getElementById('frename-input');if(i){i.focus();i.select();}},50);}
+}
+function buildFaultMgmtCard(name){
+  var drillCount=drillLibrary.filter(function(d){return(d.faults||[]).indexOf(name)>=0;}).length;
+  var isEditing=editingFaultName===name;
+  return'<div class="fault-mgmt-card">'+
+    '<div class="fault-mgmt-hdr">'+
+    '<span class="fault-mgmt-name">'+escHtml(name)+'</span>'+
+    '<span class="fault-mgmt-count">'+drillCount+' drill'+(drillCount!==1?'s':'')+'</span>'+
+    '<button class="fault-mgmt-edit-btn" data-fault="'+escAttr(name)+'" onclick="toggleFaultRename(this.dataset.fault)">✏️ Rename</button>'+
+    '<button class="fault-mgmt-del-btn" data-fault="'+escAttr(name)+'" onclick="deleteFaultName(this.dataset.fault)">✕</button>'+
+    '</div>'+
+    (isEditing?'<div class="fault-rename-wrap"><div class="fault-rename-row">'+
+    '<input type="text" class="fault-rename-input" id="frename-input" value="'+escAttr(name)+'" onkeydown="if(event.key===\'Enter\')saveFaultRenameActive()">'+
+    '<button class="fault-rename-save" onclick="saveFaultRenameActive()">Save</button>'+
+    '<button class="fault-rename-cancel" onclick="cancelFaultRename()">Cancel</button>'+
+    '</div></div>':'')+
+    '</div>';
+}
+function showFaultAddForm(){
+  var wrap=document.getElementById('fault-add-form-wrap');
+  if(wrap.innerHTML){wrap.innerHTML='';return;}
+  wrap.innerHTML='<div class="fault-add-form"><div style="font-size:13px;font-weight:800;color:#1a3a2a;margin-bottom:6px;">New Fault Name</div>'+
+    '<div class="fault-add-row">'+
+    '<input type="text" class="fault-add-input" id="fault-add-input" placeholder="e.g. Early Extension" onkeydown="if(event.key===\'Enter\')saveNewFault()">'+
+    '<button class="fault-add-save" onclick="saveNewFault()">Add</button>'+
+    '<button class="fault-add-cancel" onclick="cancelFaultAdd()">Cancel</button>'+
+    '</div></div>';
+  setTimeout(function(){var i=document.getElementById('fault-add-input');if(i)i.focus();},100);
+}
+function cancelFaultAdd(){document.getElementById('fault-add-form-wrap').innerHTML='';}
+async function saveNewFault(){
+  var input=document.getElementById('fault-add-input');
+  var name=(input?input.value:'').trim();
+  if(!name){alert('Please enter a fault name.');return;}
+  if(FAULT_DRILLS.hasOwnProperty(name)){alert('A fault with that name already exists.');return;}
+  FAULT_DRILLS[name]=[];
+  await saveFaultsToDB();
+  cancelFaultAdd();
+  renderFaultsTab();
+}
+function toggleFaultRename(name){editingFaultName=(editingFaultName===name)?null:name;renderFaultsTab();}
+function cancelFaultRename(){editingFaultName=null;renderFaultsTab();}
+async function saveFaultRenameActive(){
+  if(!editingFaultName)return;
+  var input=document.getElementById('frename-input');
+  var newName=(input?input.value:'').trim();
+  if(!newName){alert('Please enter a name.');return;}
+  if(newName===editingFaultName){cancelFaultRename();return;}
+  if(FAULT_DRILLS.hasOwnProperty(newName)){alert('A fault with that name already exists.');return;}
+  FAULT_DRILLS[newName]=FAULT_DRILLS[editingFaultName];
+  delete FAULT_DRILLS[editingFaultName];
+  await saveFaultsToDB();
+  editingFaultName=null;
+  renderFaultsTab();
+}
+async function deleteFaultName(name){
+  if(!confirm('Delete fault "'+name+'"?\n\nExisting student profiles and drill links using this fault name will not be affected.'))return;
+  delete FAULT_DRILLS[name];
+  await saveFaultsToDB();
+  if(editingFaultName===name)editingFaultName=null;
+  renderFaultsTab();
+}
 
 // ── TABS ──
 function showTab(id,el){
@@ -644,6 +745,7 @@ function showTab(id,el){
   if(id==='planner-tab')populatePlannerStudentSelect();
   if(id==='drills-tab')renderDrills();
   if(id==='benchmarks-tab')populateBenchStudentSelect();
+  if(id==='faults-tab')renderFaultsTab();
   if(id==='reports-tab')renderReportStudentList();
 }
 
@@ -805,7 +907,20 @@ function renderPlanDrills(val){if(!val)return'';try{var arr=JSON.parse(val);if(A
 async function savePlannerTabPlan(){var date=document.getElementById('pt-date').value||today();var time=document.getElementById('pt-time').value.trim();var focus=document.getElementById('pt-focus').value.trim();var drillNotes=(document.getElementById('pt-drills-notes')||{}).value||'';drillNotes=drillNotes.trim();var selEl=document.getElementById('pt-sel-drills-data');var selectedDrills=selEl?JSON.parse(selEl.value||'[]'):[];var drills=selectedDrills.length?JSON.stringify(selectedDrills):drillNotes;var notes=document.getElementById('pt-notes').value.trim();var plans=await dbGet(plannerKey(plannerStudentId))||[];plans.push({id:Date.now(),date:date,time:time,focus:focus,drills:drills,notes:notes,completed:false});await dbSet(plannerKey(plannerStudentId),plans);document.getElementById('planner-tab-form-wrap').innerHTML='';loadPlannerForStudent();}
 
 // ── DRILL LIBRARY ──
-function buildDefaultDrills(){var drills=[];var id=1;var fsNames=['Pressure on inside of trail foot','Shaft outside trail hip','Right knee holds position','Connected take away','9@9 take away','Ball on Wall rotation','Feet together','Club at target back at belly button','Pressure on inside of lead foot','DUB','Single leg pitch','Downslopes','Big Stick Drill','Two tee drill','Flat lead wrist','Passing ball into the wall','Punch Shots','Club on lead shoulder asap','Lead arm up swing under','Throwing','Early Ext wall drill','Dining Table drill - under stick','Balance - alignment sticks','Neutral Spine Backswing','Trail leg only (loading)','Palms Down','Lead arm chest connection','Mid shaft point butt at target drill','3 points of contact','50/50 - 50-50','Neutral spine engage core','Arm structure','Long Collarbones','JT Takeaway','Swing under stick/shaft plane','Constraint outside and behind ball','Square the club face early','Tennis Racquet - Face awareness','Toe @ target hammer drill','Cross Handed grip (feel)','Trail arm only backswings','Tour Striker Smart Ball','Lead knee towards ball','Resistance band above knees keep separation','Swoosh','Lead arm and club line up post impact','V\'s to trail ear/shoulder','2nd knuckle bottom of grip','Trail palm pushing towards target','Overlap preference','Step drill','Trail foot balance drill (bucket)','Hula Hoop Backswings','Push away/wind up','Plane sticks','Tap sticks (lead hip)'];var sgNames=['Set up Fundamentals','Shadow drill','Volcano Island'];var putNames=['Stability keep pressure even','Start line gate drill','Chalk line','Speed','Read','Knees and nose stay still'];fsNames.forEach(function(n){drills.push({id:id++,name:n,category:'Full Swing',notes:'',videoUrl:'',faults:getFaultsForDrill(n)});});sgNames.forEach(function(n){drills.push({id:id++,name:n,category:'Short Game',notes:'',videoUrl:'',faults:getFaultsForDrill(n)});});putNames.forEach(function(n){drills.push({id:id++,name:n,category:'Putting',notes:'',videoUrl:'',faults:getFaultsForDrill(n)});});['Bird Dogs','Dead Bugs','Single Leg Glute Bridges','Clams','Banded Crab Walks','I\'s','T\'s','Y\'s','W\'s','Banded Pull Aparts'].forEach(function(n){drills.push({id:id++,name:n,category:'Physical',notes:'',videoUrl:'',faults:[]});});['Front End Speed','Two Way Speed','Full Swing','Backswing Throw','Backswing Throw and Go','Step and Swing','Waist High, Knee High, Ankle High'].forEach(function(n){drills.push({id:id++,name:'Speedbomber — '+n,category:'Speed',notes:'Mach 3 Speedbomber. 5 swings.',videoUrl:'',faults:[]});});['Trail Arm Throw','Lead Arm Throw','Two Arm Throw','Two Way Speed','High, Medium, Low'].forEach(function(n){drills.push({id:id++,name:'Velociraptor — '+n,category:'Speed',notes:'Mach 3 Velociraptor. 5 swings.',videoUrl:'',faults:[]});});['Normal','Step Change of Direction','Step Back Drill','Heel Stomp','Double Step','Sprint','Wind Up','Happy Gilmore'].forEach(function(n){drills.push({id:id++,name:'SuperSpeed — '+n,category:'Speed',notes:'SuperSpeed full program. 3 reps each side.',videoUrl:'',faults:[]});});['Normal (Junior)','Wind Up (Junior)','Step Change of Direction (Junior)','Happy Gilmore (Junior)'].forEach(function(n){drills.push({id:id++,name:'SuperSpeed Junior — '+n,category:'Speed',notes:'SuperSpeed junior program. 3 reps each side.',videoUrl:'',faults:[]});});return drills;}
+function buildDefaultDrills(){var drills=[];var id=1;var fsNames=['Pressure on inside of trail foot','Shaft outside trail hip','Right knee holds position','Connected take away','9@9 take away','Ball on Wall rotation','Feet together','Club at target back at belly button','Pressure on inside of lead foot','DUB','Single leg pitch','Downslopes','Big Stick Drill','Two tee drill','Flat lead wrist','Passing ball into the wall','Punch Shots','Club on lead shoulder asap','Lead arm up swing under','Throwing','Early Ext wall drill','Dining Table drill - under stick','Balance - alignment sticks','Neutral Spine Backswing','Trail leg only (loading)','Palms Down','Lead arm chest connection','Mid shaft point butt at target drill','3 points of contact','50/50 - 50-50','Neutral spine engage core','Arm structure','Long Collarbones','JT Takeaway','Swing under stick/shaft plane','Constraint outside and behind ball','Square the club face early','Tennis Racquet - Face awareness','Toe @ target hammer drill','Cross Handed grip (feel)','Trail arm only backswings','Tour Striker Smart Ball','Lead knee towards ball','Resistance band above knees keep separation','Swoosh','Lead arm and club line up post impact','V\'s to trail ear/shoulder','2nd knuckle bottom of grip','Trail palm pushing towards target','Overlap preference','Step drill','Trail foot balance drill (bucket)','Hula Hoop Backswings','Push away/wind up','Plane sticks','Tap sticks (lead hip)'];var sgNames=['Set up Fundamentals','Shadow drill','Volcano Island'];var putNames=['Stability keep pressure even','Start line gate drill','Chalk line','Speed','Read','Knees and nose stay still'];fsNames.forEach(function(n){drills.push({id:id++,name:n,category:'Full Swing',notes:'',videoUrl:'',faults:getFaultsForDrill(n)});});sgNames.forEach(function(n){drills.push({id:id++,name:n,category:'Short Game',notes:'',videoUrl:'',faults:getFaultsForDrill(n)});});putNames.forEach(function(n){drills.push({id:id++,name:n,category:'Putting',notes:'',videoUrl:'',faults:getFaultsForDrill(n)});});['Bird Dogs','Dead Bugs','Single Leg Glute Bridges','Clams','Banded Crab Walks','I\'s','T\'s','Y\'s','W\'s','Banded Pull Aparts'].forEach(function(n){drills.push({id:id++,name:n,category:'Physical',notes:'',videoUrl:'',faults:[]});});['Front End Speed','Two Way Speed','Full Swing','Backswing Throw','Backswing Throw and Go','Step and Swing','Waist High, Knee High, Ankle High'].forEach(function(n){drills.push({id:id++,name:'Speedbomber — '+n,category:'Speed',notes:'Mach 3 Speedbomber. 5 swings.',videoUrl:'',faults:[]});});['Trail Arm Throw','Lead Arm Throw','Two Arm Throw','Two Way Speed','High, Medium, Low'].forEach(function(n){drills.push({id:id++,name:'Velociraptor — '+n,category:'Speed',notes:'Mach 3 Velociraptor. 5 swings.',videoUrl:'',faults:[]});});['Normal','Step Change of Direction','Step Back Drill','Heel Stomp','Double Step','Sprint','Wind Up','Happy Gilmore'].forEach(function(n){drills.push({id:id++,name:'SuperSpeed — '+n,category:'Speed',notes:'SuperSpeed full program. 3 reps each side.',videoUrl:'',faults:[]});});['Normal (Junior)','Wind Up (Junior)','Step Change of Direction (Junior)','Happy Gilmore (Junior)'].forEach(function(n){drills.push({id:id++,name:'SuperSpeed Junior — '+n,category:'Speed',notes:'SuperSpeed junior program. 3 reps each side.',videoUrl:'',faults:[]});});
+drills.push({id:id++,name:'Farmer\'s carries (lead hand)',category:'Physical',notes:'Carry a dumbbell or plate in the lead hand only. Walk 20m, turn, return. Start light — goal is time under tension not load. Builds grip strength and lead shoulder stability. Progress weight weekly when 3 sets of 20m feel controlled.',videoUrl:'',faults:['Post-impact flyaway']});
+drills.push({id:id++,name:'Dead hangs',category:'Physical',notes:'Hang from a bar with full grip, arms straight, shoulders packed down. Hold 20–30s. Builds grip endurance, scapular engagement and shoulder decompression. Progress to 3×30s before adding load.',videoUrl:'',faults:['Post-impact flyaway']});
+drills.push({id:id++,name:'Side plank progressions',category:'Physical',notes:'Begin bent-knee side plank (hold 20s), progress to full side plank (30s), then add hip abduction or thread-the-needle rotation. Lead side is the priority — trains the lateral core to brace and decelerate rotation post-impact. 3 sets lead side daily.',videoUrl:'',faults:['Post-impact flyaway']});
+drills.push({id:id++,name:'Band pull-aparts',category:'Physical',notes:'Hold a resistance band at shoulder height, arms straight, pull apart to a T position. Squeeze shoulder blades at end range. Trains lower trap and rear deltoid — anchors the scapula through the follow-through. 3×15 daily, good as a warm-up.',videoUrl:'',faults:['Post-impact flyaway']});
+drills.push({id:id++,name:'Wrist roller',category:'Physical',notes:'Roll a weight up using wrist flexion and extension on a short bar. Can be improvised with a dowel, rope and small plate. Targets forearm flexors and extensors that stabilise the wrist joint at impact. 3 rolls up and down = 1 set.',videoUrl:'',faults:['Post-impact flyaway']});
+drills.push({id:id++,name:'Towel drill — lead arm connection',category:'Full Swing',notes:'Tuck a small towel under the lead arm between the bicep and ribcage. Make slow swings keeping the towel in. Once stable, allow the arm to gently release post-impact while keeping the feeling of wrapping across rather than flying out. Progress to half then three-quarter swings when connection is consistent.',videoUrl:'',faults:['Post-impact flyaway','Chicken Wing']});
+drills.push({id:id++,name:'Punch shot hold',category:'Full Swing',notes:'Hit punch shots with an abbreviated follow-through and hold the finish for 3 full seconds. Finish must show the lead arm wrapping across the chest — not extended outward. Use 7-iron or shorter. Once the hold is clean, gradually extend the follow-through while maintaining the wrap feeling.',videoUrl:'',faults:['Post-impact flyaway']});
+drills.push({id:id++,name:'Lead arm only swings',category:'Full Swing',notes:'Swing with the lead arm only, waist-high back to waist-high through, progressing to a full finish with the arm wrapping across the body. Builds grip and forearm strength in a golf-specific pattern. Use a short iron or weighted stick. 10 swings per set maximum at first.',videoUrl:'',faults:['Post-impact flyaway','Chicken Wing']});
+drills.push({id:id++,name:'Finish position set and swing',category:'General',notes:'Set the junior in the correct full finish — belt buckle to target, lead arm across the chest, club pointing behind the head. Hold 5 seconds, feel it, then swing into it. Top-down motor learning: build the destination first. Use video or mirror to confirm position.',videoUrl:'',faults:['Post-impact flyaway']});
+drills.push({id:id++,name:'Speed threshold ramp',category:'General',notes:'Identify the speed (50/75/90/full) at which the flyaway first appears. Train at the speed below threshold until 5 consecutive swings show no flyaway. Introduce one swing per set at threshold with a held finish. Graduate when threshold is clean across a full session.',videoUrl:'',faults:['Post-impact flyaway']});
+drills.push({id:id++,name:'Whoosh drill — speed with structure',category:'Full Swing',notes:'Swing the club upside down (grip end down) at full speed. The whoosh sounds loudest at the correct impact point. Changes the centrifugal loading and naturally guides the arm into a wrapped follow-through. Listen for the whoosh at the ball not behind it.',videoUrl:'',faults:['Post-impact flyaway','Casting/Scooping']});
+drills.push({id:id++,name:'SuperSpeed Junior — finish hold protocol',category:'Full Swing',notes:'Run the standard SuperSpeed Junior protocol but add a mandatory finish hold to every swing. Junior must hold a full balanced arm-across-body finish before resetting. Prioritise quality of the hold over swing count in early sessions.',videoUrl:'',faults:['Post-impact flyaway']});
+return drills;}
 function getFaultsForDrill(n){var f=[];Object.keys(FAULT_DRILLS).forEach(function(fault){if(FAULT_DRILLS[fault].indexOf(n)>=0)f.push(fault);});return f;}
 async function loadDrillLibrary(){var saved=await dbGet('hub_drills');if(saved&&saved.length){drillLibrary=saved;}else{drillLibrary=buildDefaultDrills();await dbSet('hub_drills',drillLibrary);}buildCatBar();renderDrills();renderFaultView();}
 function setDrillView(v){drillView=v;document.getElementById('dl-master-view').style.display=v==='master'?'block':'none';document.getElementById('dl-fault-view').style.display=v==='fault'?'block':'none';document.getElementById('dl-tab-master').className='dl-view-tab'+(v==='master'?' active':'');document.getElementById('dl-tab-fault').className='dl-view-tab'+(v==='fault'?' active':'');if(v==='fault')renderFaultView();}
@@ -1424,6 +1539,12 @@ async function init(){
   try{
     await sb.from('jdp_data').select('key').limit(1);
     document.getElementById('sync-dot').className='sync-dot';document.getElementById('sync-msg').textContent='Live';
+    var savedFaults=await dbGet('hub_faults');
+    if(savedFaults&&typeof savedFaults==='object'&&!Array.isArray(savedFaults)){
+      Object.keys(FAULT_DRILLS).forEach(function(k){if(!savedFaults.hasOwnProperty(k))savedFaults[k]=FAULT_DRILLS[k];});
+      Object.keys(FAULT_DRILLS).slice().forEach(function(k){delete FAULT_DRILLS[k];});
+      Object.assign(FAULT_DRILLS,savedFaults);
+    }
     students=await dbGet('hub_students')||[];
     renderList();populatePlannerStudentSelect();populateBenchStudentSelect();
     await loadDrillLibrary();
