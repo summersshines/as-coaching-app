@@ -1548,6 +1548,11 @@ async function init(){
     students=await dbGet('hub_students')||[];
     renderList();populatePlannerStudentSelect();populateBenchStudentSelect();
     await loadDrillLibrary();
+    var defaultDrills=buildDefaultDrills();
+    var existingNames=drillLibrary.map(function(d){return d.name;});
+    var added=false;
+    defaultDrills.forEach(function(d){if(existingNames.indexOf(d.name)<0){drillLibrary.push(d);added=true;}});
+    if(added)await dbSet('hub_drills',drillLibrary);
   }catch(e){document.getElementById('sync-dot').className='sync-dot off';document.getElementById('sync-msg').textContent='Error';console.error(e);}
   document.getElementById('loading').style.display='none';
 }
